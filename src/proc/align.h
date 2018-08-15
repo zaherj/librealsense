@@ -74,6 +74,11 @@ namespace librealsense
             const std::vector<int2>& pixel_top_left_int,
             const std::vector<int2>& pixel_bottom_right_int);
 
+		inline void move_other_to_depth_points(const uint16_t* z_pixels,
+			const bytes<4>* source,
+			bytes<4>* dest, const rs2_intrinsics& to,
+			const std::vector<int2>& pixel_top_left_int,
+			const std::vector<int2>& pixel_bottom_right_int);
     };
 #endif
 
@@ -81,6 +86,7 @@ namespace librealsense
     {
     public:
         align(rs2_stream align_to);
+		void align_other_to_z_point(byte* other_aligned_to_z, const uint16_t* z_pixels, float z_scale, const rs2_intrinsics& z_intrin, const rs2_extrinsics& z_to_other, const rs2_intrinsics& other_intrin);
 
     private:
         void on_frame(frame_holder frameset, librealsense::synthetic_source_interface* source);

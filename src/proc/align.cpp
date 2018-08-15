@@ -361,10 +361,45 @@ namespace librealsense
             move_other_to_depth(z_pixels, reinterpret_cast<const bytes<3>*>(source), reinterpret_cast<bytes<3>*>(dest), to,
                 _pixel_top_left_int, bottom_right);
             break;
+		case 4:
+			move_other_to_depth_points(z_pixels, reinterpret_cast<const bytes<4>*>(source), reinterpret_cast<bytes<4>*>(dest), to,
+				_pixel_top_left_int, bottom_right);
+			break;
         default:
             break;
         }
     }
+
+	void image_transform::move_other_to_depth_points(const uint16_t* z_pixels,
+		const bytes<4>* source,
+		bytes<4>* dest, const rs2_intrinsics& to,
+		const std::vector<int2>& pixel_top_left_int,
+		const std::vector<int2>& pixel_bottom_right_int)
+	{
+		// Iterate over the pixels of the depth image
+		for (int y = 0; y < _depth.height; ++y)
+		{
+			for (int x = 0; x < _depth.width; ++x)
+			{
+				auto depth_pixel_index = y * _depth.width + x;
+				// Skip over depth pixels with the value of zero, we have no depth data so we will not write anything into our aligned images
+				if (z_pixels[depth_pixel_index])
+				{
+					for (int other_y = pixel_top_left_int[depth_pixel_index].y; other_y <= pixel_bottom_right_int[depth_pixel_index].y; ++other_y)
+					{
+						for (int other_x = pixel_top_left_int[depth_pixel_index].x; other_x <= pixel_bottom_right_int[depth_pixel_index].x; ++other_x)
+						{
+							if (other_x < 0 || other_y < 0 || other_x >= to.width || other_y >= to.height)
+								continue;
+							auto other_ind = other_y * to.width + other_x;
+
+							dest[depth_pixel_index] = (static_cast<T>(&other_ind));
+						}
+					}
+				}
+			}
+		}
+	}
 
     template<class T >
     void image_transform::move_other_to_depth(const uint16_t* z_pixels,
@@ -472,6 +507,19 @@ namespace librealsense
         align_images(depth_intrin, depth_to_other, other_intrin, get_depth,
             [out_other, in_other](int depth_pixel_index, int other_pixel_index) { out_other[depth_pixel_index] = in_other[other_pixel_index]; });
     }
+	/*
+	template<class GET_DEPTH>
+	void align_other_to_depth_point(byte* other_aligned_to_depth, GET_DEPTH get_depth, const rs2_intrinsics& depth_intrin, const rs2_extrinsics& depth_to_other, const rs2_intrinsics& other_intrin)
+	{
+		auto out_other = (bytes<4> *)(other_aligned_to_depth);
+		align_images(depth_intrin, depth_to_other, other_intrin, get_depth,
+			[out_other](int depth_pixel_index, int other_pixel_index) { out_other[depth_pixel_index] = other_pixel_index; });
+	}*/
+	/*
+	void align::align_other_to_z_point(byte* other_aligned_to_z, const uint16_t* z_pixels, float z_scale, const rs2_intrinsics& z_intrin, const rs2_extrinsics& z_to_other, const rs2_intrinsics& other_intrin)
+	{
+		align_other_to_depth_point(other_aligned_to_z, [z_pixels, z_scale](int z_pixel_index) { return z_scale * z_pixels[z_pixel_index]; }, z_intrin, z_to_other, other_intrin);
+	}*/
 
     template<class GET_DEPTH>
     void align_other_to_depth(byte* other_aligned_to_depth, GET_DEPTH get_depth, const rs2_intrinsics& depth_intrin, const rs2_extrinsics & depth_to_other, const rs2_intrinsics& other_intrin, const byte* other_pixels, rs2_format other_format)
@@ -695,9 +743,23 @@ namespace librealsense
                     return;
                 }
 
-                byte* other_aligned_to_depth = const_cast<byte*>(aligned_frame.frame->get_frame_data());
-                memset(other_aligned_to_depth, 0, depth_intrinsics.height * depth_intrinsics.width * aligned_bytes_per_pixel);
 #ifdef __SSSE3__
+				int bbp = 0;
+				byte* other_aligned_to_depth;
+				if (other_profile->get_format() == RS2_FORMAT_BGRA8) {
+					bbp = 4;
+
+					other_aligned_to_depth = const_cast<byte*>(aligned_frame.frame->get_frame_data());
+					memset(other_aligned_to_depth, 0, depth_intrinsics.height * depth_intrinsics.width * 4);
+				}
+				else {
+					bbp = other_frame->get_bpp() / 8;
+
+					other_aligned_to_depth = const_cast<byte*>(aligned_frame.frame->get_frame_data());
+					memset(other_aligned_to_depth, 0, depth_intrinsics.height * depth_intrinsics.width * aligned_bytes_per_pixel);
+				}
+
+
                 if (_stream_transform == nullptr)
                 {
                     _stream_transform = std::make_shared<image_transform>(depth_intrinsics,
@@ -706,12 +768,19 @@ namespace librealsense
                     _stream_transform->pre_compute_x_y_map_corners();
                 }
 
+				
+
                 _stream_transform->align_other_to_depth(reinterpret_cast<const uint16_t*>(depth_frame->get_frame_data()),
                     reinterpret_cast<const byte*>(other_frame->get_frame_data()),
-                    other_aligned_to_depth, other_frame->get_bpp()/8,
+                    other_aligned_to_depth, bbp,
                     other_intrinsics,
                     depth_to_other_extrinsics);
 #else
+
+
+				byte* other_aligned_to_depth = const_cast<byte*>(aligned_frame.frame->get_frame_data());
+				memset(other_aligned_to_depth, 0, depth_intrinsics.height * depth_intrinsics.width * aligned_bytes_per_pixel);
+
                 align_other_to_z(other_aligned_to_depth,
                     reinterpret_cast<const uint16_t*>(depth_frame->get_frame_data()),
                     depth_scale,

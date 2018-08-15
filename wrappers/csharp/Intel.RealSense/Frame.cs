@@ -180,6 +180,31 @@ namespace Intel.RealSense
                 handle.Free();
             }
         }
+
+
+
+        /// <summary>
+        /// Copy frame data to managed typed array
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="array"></param>
+        /// <param name="size"></param>
+        //public void CopyTo<T>(out T[] array)
+        public void CopyTo<T>(T[] array, int size)
+        {
+            if (array == null)
+                throw new ArgumentNullException("array");
+            var handle = GCHandle.Alloc(array, GCHandleType.Pinned);
+            try
+            {
+                //System.Diagnostics.Debug.Assert((array.Length * Marshal.SizeOf(typeof(T))) == (Stride * Height));
+                NativeMethods.memcpy(handle.AddrOfPinnedObject(), Data, size);
+            }
+            finally
+            {
+                handle.Free();
+            }
+        }
     }
 
     public class DepthFrame : VideoFrame

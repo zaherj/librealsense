@@ -21,6 +21,10 @@ namespace librealsense
                                                      const rs2_extrinsics & disparity_to_other, const rs2_intrinsics & other_intrin);
     void             align_other_to_z               (byte * other_aligned_to_z, const uint16_t * z_pixels, float z_scale, const rs2_intrinsics & z_intrin,
                                                      const rs2_extrinsics & z_to_other, const rs2_intrinsics & other_intrin, const byte * other_pixels, rs2_format other_format);
+
+	/*void             align_other_to_z_point			(byte* other_aligned_to_z, const uint16_t* z_pixels, float z_scale, const rs2_intrinsics& z_intrin, 
+													 const rs2_extrinsics& z_to_other, const rs2_intrinsics& other_intrin);
+*/
     void             align_other_to_disparity       (byte * other_aligned_to_disparity, const uint16_t * disparity_pixels, float disparity_scale, const rs2_intrinsics & disparity_intrin,
                                                      const rs2_extrinsics & disparity_to_other, const rs2_intrinsics & other_intrin, const byte * other_pixels, rs2_format other_format);
 

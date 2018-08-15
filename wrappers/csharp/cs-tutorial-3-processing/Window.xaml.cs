@@ -63,7 +63,7 @@ namespace Intel.RealSense
             {
                 var cfg = new Config();
                 cfg.EnableStream(Stream.Depth, 640, 480);
-                cfg.EnableStream(Stream.Color, Format.Rgb8);
+                cfg.EnableStream(Stream.Color, Format.Rgba8);
                 pipeline.Start(cfg);
 
                 // Create custom processing block

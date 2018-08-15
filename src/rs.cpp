@@ -1751,6 +1751,15 @@ rs2_processing_block* rs2_create_align(rs2_stream align_to, rs2_error** error) B
     return new rs2_processing_block{ block };
 }
 HANDLE_EXCEPTIONS_AND_RETURN(nullptr, align_to)
+//auto block = std::make_shared<librealsense::disparity_transform>(transform_to_disparity > 0);
+/*
+rs2_processing_block* rs2_align_other_to_z_point(byte* other_aligned_to_z, const uint16_t* z_pixels, float z_scale, const rs2_intrinsics& z_intrin, const rs2_extrinsics& z_to_other, const rs2_intrinsics& other_intrin, rs2_error** error) BEGIN_API_CALL
+{
+	std::make_shared<librealsense::align>(transform_to_disparity > 0);
+	return other_aligned_to_z;
+}
+HANDLE_EXCEPTIONS_AND_RETURN(nullptr, other_aligned_to_z)
+*/
 
 rs2_processing_block* rs2_create_colorizer(rs2_error** error) BEGIN_API_CALL
 {
